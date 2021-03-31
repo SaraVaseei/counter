@@ -1,0 +1,56 @@
+version: '3'
+services:
+
+  # PHP Service
+  counter_app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: counter_app
+    environment:
+      SERVICE_NAME: counter_app_service
+      SERVICE_TAGS: 1.0
+    depends_on:
+      - counter_db
+    volumes:
+      - ./:/home/purehope/Documents/bontech/counter
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+
+  # Nginx Service
+  counter_web:
+    image: nginx:alpine
+    container_name: counter_web
+    working_dir: /home/purehope/Documents/bontech/counter
+    depends_on:
+      - counter_app
+    volumes:
+      - ./:/home/purehope/Documents/bontech/counter
+      - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
+    ports:
+      - "8085:80"
+
+  # MySQL Service
+  counter_db:
+    image: mysql:5.7.26
+    container_name: counter_db
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      SERVICE_NAME: counter_db_service
+      SERVICE_TAGS: 1.0
+    volumes:
+      - dbdata:/var/lib/mysql
+      - ./docker/mysql/my.cnf:/etc/mysql/my.cnf
+
+  redis:
+    image: redis:4.0
+    container_name: counter_redis
+    ports:
+      - "6382:6379"
+
+# Volumes
+volumes:
+  dbdata:
+    driver: local
